@@ -1,101 +1,74 @@
+7. Design, develop and implement recursively subdivide a tetrahedron to form 3D Sierpinski gasket. The number of recursive steps is to be specified by the user. Sierpinski gasket
 
-#include <stdio.h>
-#include <math.h>
-#include <glut.h>
-
-               struct Point
-{
-    float x, y, z;
-
-    Point()
-    {
-        x = y = z = 0;
-    }
-
-    Point(float x, float y, float z)
-    {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }
-};
-
+#include<stdio.h>
+#include<math.h>
+#include<iostream>
+#include<GL/glut.h>
+using namespace std;
+float v[4][3] = { { 0.0,0.0,1.0 },{ 0,1,-1 },{ -0.8,-0.4,-1 },{ 0.8,-0.4,-1 } };
 int n;
-Point points[4] = {Point(0, 1, 0), Point(0.5, -0.5, 0), Point(-0.5, -0.5, 0), Point(0, 0, 1)};
 
-void myInit();
-void display();
-void drawTriangle(Point a, Point b, Point c);
-void divideTriangle(Point a, Point b, Point c, int n);
-Point midPoint(Point a, Point b);
-
-void myInit()
+void triangle(float a[], float b[], float c[])
 {
-    glMatrixMode(GL_PROJECTION);  // Specifies current matrix for geometric-viewing transformations
-    glLoadIdentity();             // Sets current matrix to identity.
-    glOrtho(-2, 2, -2, 2, -2, 2); // Specifies parameters for a clipping window and the near and far clipping planes
-    glMatrixMode(GL_MODELVIEW);
+ glBegin(GL_POLYGON);
+ glVertex3fv(a);
+ glVertex3fv(b);
+ glVertex3fv(c);
+ glEnd();
 }
 
-void drawTriangle(Point a, Point b, Point c)
+void divide_triangle(float a[], float b[], float c[], int m)
 {
-    glBegin(GL_POLYGON);
-    glVertex3f(a.x, a.y, a.z);
-    glVertex3f(b.x, b.y, b.z);
-    glVertex3f(c.x, c.y, c.z);
-    glEnd();
+ float v1[3], v2[3], v3[3];
+ int i;
+ if (m>0)
+ {
+  for (i = 0; i<3; i++) v1[i] = (a[i] + b[i]) / 2;
+  for (i = 0; i<3; i++) v2[i] = (a[i] + c[i]) / 2;
+  for (i = 0; i<3; i++) v3[i] = (b[i] + c[i]) / 2;
+  divide_triangle(a, v1, v2, m - 1);
+  divide_triangle(c, v2, v3, m - 1);
+  divide_triangle(b, v3, v1, m - 1);
+ }
+ else (triangle(a, b, c));
 }
 
-void divideTriangle(Point a, Point b, Point c, int n)
+void tetrahedron(int m)
 {
-    if (n > 0)
-    {
-        Point midAB = midPoint(a, b);
-        Point midBC = midPoint(b, c);
-        Point midCA = midPoint(c, a);
-
-        divideTriangle(a, midAB, midCA, n - 1);
-        divideTriangle(midAB, b, midBC, n - 1);
-        divideTriangle(midCA, midBC, c, n - 1);
-    }
-    else
-        drawTriangle(a, b, c);
-}
-
-Point midPoint(Point a, Point b)
-{
-    Point mid;
-    mid.x = (a.x + b.x) / 2;
-    mid.y = (a.y + b.y) / 2;
-    mid.z = (a.z + b.z) / 2;
-    return mid;
+ glColor3f(1.0, 0.0, 0.0);
+ divide_triangle(v[0], v[1], v[2], m);
+ glColor3f(0.0, 1.0, 0.0);
+ divide_triangle(v[3], v[2], v[1], m);
+ glColor3f(0.0, 0.0, 1.0);
+ divide_triangle(v[0], v[3], v[1], m);
+ glColor3f(1.0, 1.0, 0.0);
+ divide_triangle(v[0], v[2], v[3], m);
 }
 
 void display()
 {
-
-    glClearColor(1, 1, 1, 1);     // Specifies a background RGB color for a display window.
-    glClear(GL_COLOR_BUFFER_BIT); // Clear display window.
-    glColor3f(1, 0, 0);           // Set current color to red
-    divideTriangle(points[0], points[1], points[2], n);
-    glColor3f(0, 1, 0);
-    divideTriangle(points[3], points[2], points[0], n);
-    glColor3f(0, 0, 1);
-    divideTriangle(points[3], points[0], points[1], n);
-    glColor3f(1, 0, 1);
-    divideTriangle(points[3], points[1], points[2], n);
-    glFlush(); // Process all OpenGL routines as quickly as possible.
+ glMatrixMode(GL_PROJECTION);
+ glLoadIdentity();
+ glOrtho(-2.0, 2.0, -2.0, 2.0, -10.0, 10.0);
+ glMatrixMode(GL_MODELVIEW);
+ glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+ tetrahedron(n);
+ glFlush();
+ glutPostRedisplay();
 }
 
-int main()
+int main(int argc, char* argv[])
 {
-    glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE); // sets buffering and color mode for a display window
-    glutInitWindowPosition(100, 100);            // Specifies coordinates for the top-left corner of a display window.
-    glutInitWindowSize(500, 500);                // Specifies width and height for a display window.
-    glutCreateWindow("3D SIERPINSKI PATTERN");   // Creates a display window & specify a display-window title
-    printf("Enter the value of n: ");
-    scanf_s("%d", &n);
-    myInit();                 // Execute initialization procedure.
-    glutDisplayFunc(display); // Invokes a function to create a picture within the current display window.
-    glutMainLoop();           // Executes the computer-graphics program.
+ cout << "Enter the number of divisions: ";
+ cin >> n;
+ glutInit(&argc, argv);
+ glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH);
+ glutInitWindowSize(500, 500);
+ glutInitWindowPosition(0, 0);
+ glutCreateWindow("3D Gasket");
+ glutDisplayFunc(display);
+ glEnable(GL_DEPTH_TEST);
+ glClearColor(1.0, 1.0, 1.0, 1.0);
+ glutMainLoop();
+ return 0;
 }
